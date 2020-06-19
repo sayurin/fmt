@@ -73,34 +73,6 @@ inline std::size_t convert_rwcount(std::size_t count) { return count; }
 FMT_BEGIN_NAMESPACE
 
 #ifdef _WIN32
-detail::utf16_to_utf8::utf16_to_utf8(wstring_view s) {
-  if (int error_code = convert(s)) {
-    FMT_THROW(windows_error(error_code,
-                            "cannot convert string from UTF-16 to UTF-8"));
-  }
-}
-
-int detail::utf16_to_utf8::convert(wstring_view s) {
-  if (s.size() > INT_MAX) return ERROR_INVALID_PARAMETER;
-  int s_size = static_cast<int>(s.size());
-  if (s_size == 0) {
-    // WideCharToMultiByte does not support zero length, handle separately.
-    buffer_.resize(1);
-    buffer_[0] = 0;
-    return 0;
-  }
-
-  int length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s_size, nullptr, 0,
-                                   nullptr, nullptr);
-  if (length == 0) return GetLastError();
-  buffer_.resize(length + 1);
-  length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s_size, &buffer_[0],
-                               length, nullptr, nullptr);
-  if (length == 0) return GetLastError();
-  buffer_[length] = 0;
-  return 0;
-}
-
 void windows_error::init(int err_code, string_view format_str,
                          format_args args) {
   error_code_ = err_code;
@@ -113,21 +85,17 @@ void windows_error::init(int err_code, string_view format_str,
 void detail::format_windows_error(detail::buffer<char>& out, int error_code,
                                   string_view message) FMT_NOEXCEPT {
   FMT_TRY {
-    wmemory_buffer buf;
+    memory_buffer buf;
     buf.resize(inline_buffer_size);
     for (;;) {
-      wchar_t* system_message = &buf[0];
-      int result = FormatMessageW(
+      char* system_message = &buf[0];
+      int result = FormatMessageA(
           FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
           error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), system_message,
           static_cast<uint32_t>(buf.size()), nullptr);
       if (result != 0) {
-        utf16_to_utf8 utf8_message;
-        if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
-          format_to(std::back_inserter(out), "{}: {}", message, utf8_message);
-          return;
-        }
-        break;
+        format_to(std::back_inserter(out), "{}: {}", message, system_message);
+        return;
       }
       if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
         break;  // Can't get error message, report error code instead.
