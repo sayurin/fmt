@@ -25,20 +25,6 @@ using fmt::error_code;
 
 #  include <windows.h>
 
-TEST(UtilTest, UTF16ToUTF8) {
-  std::string s = "ёжик";
-  fmt::detail::utf16_to_utf8 u(L"\x0451\x0436\x0438\x043A");
-  EXPECT_EQ(s, u.str());
-  EXPECT_EQ(s.size(), u.size());
-}
-
-TEST(UtilTest, UTF16ToUTF8EmptyString) {
-  std::string s = "";
-  fmt::detail::utf16_to_utf8 u(L"");
-  EXPECT_EQ(s, u.str());
-  EXPECT_EQ(s.size(), u.size());
-}
-
 template <typename Converter, typename Char>
 void check_utf_conversion_error(
     const char* message,
@@ -55,31 +41,18 @@ void check_utf_conversion_error(
   EXPECT_EQ(fmt::to_string(out), error.what());
 }
 
-TEST(UtilTest, UTF16ToUTF8Error) {
-  check_utf_conversion_error<fmt::detail::utf16_to_utf8, wchar_t>(
-      "cannot convert string from UTF-16 to UTF-8");
-}
-
-TEST(UtilTest, UTF16ToUTF8Convert) {
-  fmt::detail::utf16_to_utf8 u;
-  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::wstring_view(0, 1)));
-  EXPECT_EQ(ERROR_INVALID_PARAMETER,
-            u.convert(fmt::wstring_view(L"foo", INT_MAX + 1u)));
-}
-
 TEST(UtilTest, FormatWindowsError) {
-  LPWSTR message = 0;
-  FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+  LPSTR message = 0;
+  FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
                      FORMAT_MESSAGE_IGNORE_INSERTS,
                  0, ERROR_FILE_EXISTS,
                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                 reinterpret_cast<LPWSTR>(&message), 0, 0);
-  fmt::detail::utf16_to_utf8 utf8_message(message);
-  LocalFree(message);
+                 reinterpret_cast<LPSTR>(&message), 0, 0);
   fmt::memory_buffer actual_message;
   fmt::detail::format_windows_error(actual_message, ERROR_FILE_EXISTS, "test");
-  EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
+  EXPECT_EQ(fmt::format("test: {}", message),
             fmt::to_string(actual_message));
+  LocalFree(message);
   actual_message.resize(0);
   auto max_size = fmt::detail::max_value<size_t>() / 2;
   fmt::detail::format_windows_error(actual_message, ERROR_FILE_EXISTS,
@@ -89,27 +62,26 @@ TEST(UtilTest, FormatWindowsError) {
 }
 
 TEST(UtilTest, FormatLongWindowsError) {
-  LPWSTR message = 0;
+  LPSTR message = 0;
   // this error code is not available on all Windows platforms and
   // Windows SDKs, so do not fail the test if the error string cannot
   // be retrieved.
   const int provisioning_not_allowed =
       0x80284013L /*TBS_E_PROVISIONING_NOT_ALLOWED*/;
-  if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+  if (FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
                          FORMAT_MESSAGE_FROM_SYSTEM |
                          FORMAT_MESSAGE_IGNORE_INSERTS,
                      0, static_cast<DWORD>(provisioning_not_allowed),
                      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                     reinterpret_cast<LPWSTR>(&message), 0, 0) == 0) {
+                     reinterpret_cast<LPSTR>(&message), 0, 0) == 0) {
     return;
   }
-  fmt::detail::utf16_to_utf8 utf8_message(message);
-  LocalFree(message);
   fmt::memory_buffer actual_message;
   fmt::detail::format_windows_error(actual_message, provisioning_not_allowed,
                                     "test");
-  EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
+  EXPECT_EQ(fmt::format("test: {}", message),
             fmt::to_string(actual_message));
+  LocalFree(message);
 }
 
 TEST(UtilTest, WindowsError) {
