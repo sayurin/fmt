@@ -440,31 +440,63 @@ template <typename Char> struct formatter<std::tm, Char> {
 };
 
 namespace detail {
-template <typename Period> FMT_CONSTEXPR const char* get_units() {
+template <typename Period> FMT_CONSTEXPR const wchar_t* get_units() {
   return nullptr;
 }
-template <> FMT_CONSTEXPR const char* get_units<std::atto>() { return "as"; }
-template <> FMT_CONSTEXPR const char* get_units<std::femto>() { return "fs"; }
-template <> FMT_CONSTEXPR const char* get_units<std::pico>() { return "ps"; }
-template <> FMT_CONSTEXPR const char* get_units<std::nano>() { return "ns"; }
-template <> FMT_CONSTEXPR const char* get_units<std::micro>() { return "µs"; }
-template <> FMT_CONSTEXPR const char* get_units<std::milli>() { return "ms"; }
-template <> FMT_CONSTEXPR const char* get_units<std::centi>() { return "cs"; }
-template <> FMT_CONSTEXPR const char* get_units<std::deci>() { return "ds"; }
-template <> FMT_CONSTEXPR const char* get_units<std::ratio<1>>() { return "s"; }
-template <> FMT_CONSTEXPR const char* get_units<std::deca>() { return "das"; }
-template <> FMT_CONSTEXPR const char* get_units<std::hecto>() { return "hs"; }
-template <> FMT_CONSTEXPR const char* get_units<std::kilo>() { return "ks"; }
-template <> FMT_CONSTEXPR const char* get_units<std::mega>() { return "Ms"; }
-template <> FMT_CONSTEXPR const char* get_units<std::giga>() { return "Gs"; }
-template <> FMT_CONSTEXPR const char* get_units<std::tera>() { return "Ts"; }
-template <> FMT_CONSTEXPR const char* get_units<std::peta>() { return "Ps"; }
-template <> FMT_CONSTEXPR const char* get_units<std::exa>() { return "Es"; }
-template <> FMT_CONSTEXPR const char* get_units<std::ratio<60>>() {
-  return "m";
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::atto>() {
+  return L"as";
 }
-template <> FMT_CONSTEXPR const char* get_units<std::ratio<3600>>() {
-  return "h";
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::femto>() {
+  return L"fs";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::pico>() {
+  return L"ps";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::nano>() {
+  return L"ns";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::micro>() {
+  return L"µs";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::milli>() {
+  return L"ms";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::centi>() {
+  return L"cs";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::deci>() {
+  return L"ds";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::ratio<1>>() {
+  return L"s";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::deca>() {
+  return L"das";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::hecto>() {
+  return L"hs";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::kilo>() {
+  return L"ks";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::mega>() {
+  return L"Ms";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::giga>() {
+  return L"Gs";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::tera>() {
+  return L"Ts";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::peta>() {
+  return L"Ps";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::exa>() { return L"Es"; }
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::ratio<60>>() {
+  return L"m";
+}
+template <> FMT_CONSTEXPR const wchar_t* get_units<std::ratio<3600>>() {
+  return L"h";
 }
 
 enum class numeric_system {
@@ -768,23 +800,14 @@ OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
   return format_to(out, std::is_floating_point<Rep>::value ? fp_f : format,
                    val);
 }
-template <typename Char, typename OutputIt>
-OutputIt copy_unit(string_view unit, OutputIt out, Char) {
-  return std::copy(unit.begin(), unit.end(), out);
-}
-
-template <typename OutputIt>
-OutputIt copy_unit(string_view unit, OutputIt out, wchar_t) {
-  // This works when wchar_t is UTF-32 because units only contain characters
-  // that have the same representation in UTF-16 and UTF-32.
-  utf8_to_utf16 u(unit);
-  return std::copy(u.c_str(), u.c_str() + u.size(), out);
-}
 
 template <typename Char, typename Period, typename OutputIt>
 OutputIt format_duration_unit(OutputIt out) {
-  if (const char* unit = get_units<Period>())
-    return copy_unit(string_view(unit), out, Char());
+  if (const wchar_t* unit = get_units<Period>()) {
+    convert_to<Char> converted(unit);
+    basic_string_view<Char> sv = converted;
+    return std::copy(sv.begin(), sv.end(), out);
+  }
   const Char num_f[] = {'[', '{', '}', ']', 's', 0};
   if (const_check(Period::den == 1)) return format_to(out, num_f, Period::num);
   const Char num_def_f[] = {'[', '{', '}', '/', '{', '}', ']', 's', 0};
