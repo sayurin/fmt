@@ -1240,6 +1240,168 @@ int snprintf_float(T value, int precision, float_specs specs,
   }
 }
 
+void validate_utf32(int ch) {
+  if ((0xD800 <= ch && ch < 0xE000) || 0x110000 <= ch)
+    FMT_THROW(std::runtime_error("invalid utf32"));
+}
+
+template <typename Fn> void utf16_to_utf32(wstring_view s, Fn fn) {
+  for (auto it = s.begin(); it != s.end(); ++it) {
+    int ch0 = *it;
+    if (ch0 < 0xD800 || 0xE000 <= ch0)
+      fn(ch0);
+    else if (ch0 < 0xDC00) {
+      if (++it == s.end()) FMT_THROW(std::runtime_error("invalid utf16"));
+      int ch1 = *it;
+      if (0xDC00 <= ch1 && ch1 < 0xE000)
+        fn(0x10000 + (ch0 - 0xD800) * 0x400 + (ch1 - 0xDC00));
+      else
+        FMT_THROW(std::runtime_error("invalid utf16"));
+    } else
+      FMT_THROW(std::runtime_error("invalid utf16"));
+  }
+}
+
+template <typename Char>
+void push_back_utf8(int ch, basic_memory_buffer<Char>& buffer) {
+  if (ch < 0x80)
+    buffer.push_back(static_cast<Char>(ch));
+  else {
+    if (ch < 0x800)
+      buffer.push_back(static_cast<Char>(0xC0 | ch >> 6));
+    else {
+      if (ch < 0x10000)
+        buffer.push_back(static_cast<Char>(0xE0 | ch >> 12));
+      else {
+        buffer.push_back(static_cast<Char>(0xF0 | ch >> 18));
+        buffer.push_back(static_cast<Char>(0x80 | (ch >> 12 & 0x3F)));
+      }
+      buffer.push_back(static_cast<Char>(0x80 | (ch >> 6 & 0x3F)));
+    }
+    buffer.push_back(static_cast<Char>(0x80 | (ch & 0x3F)));
+  }
+}
+
+// wchar_t(2bytes) to char8_t
+// wchar_t(2bytes) to char(utf-8)
+template <typename Char,
+          FMT_ENABLE_IF(sizeof(wchar_t) == 2 &&
+                        (std::is_same<Char, char8_type>::value ||
+                         std::is_same<Char, char>::value && FMT_UNICODE))>
+void convert_to_copy(wstring_view s, basic_memory_buffer<Char>& buffer) {
+  buffer.reserve(s.size() + 1);
+  utf16_to_utf32(s, [&buffer](int ch) {
+    validate_utf32(ch);
+    push_back_utf8(ch, buffer);
+  });
+  buffer.push_back(static_cast<Char>(0));
+}
+
+#ifdef _WIN32
+// wchar_t(2bytes) to char(!utf-8)
+template <typename Char,
+          FMT_ENABLE_IF(sizeof(wchar_t) == 2 &&
+                        std::is_same<Char, char>::value && !FMT_UNICODE)>
+void convert_to_copy(wstring_view s, basic_memory_buffer<Char>& buffer) {
+  utf16_to_utf32(s, validate_utf32);
+  int length =
+      WideCharToMultiByte(CP_ACP, 0, s.data(), static_cast<int>(s.size()),
+                          nullptr, 0, nullptr, nullptr);
+  if (length == 0) FMT_THROW(std::runtime_error("invalid utf16"));
+  buffer.resize(length + 1);
+  length = WideCharToMultiByte(CP_ACP, 0, s.data(), static_cast<int>(s.size()),
+                               buffer.data(), length, nullptr, nullptr);
+  if (length == 0) FMT_THROW(std::runtime_error("invalid utf16"));
+  buffer[s.size()] = 0;
+}
+#else
+// wchar_t(2bytes) to char(!utf-8)
+template <typename Char,
+          FMT_ENABLE_IF(sizeof(wchar_t) == 2 &&
+                        std::is_same<Char, char>::value && !FMT_UNICODE)>
+void convert_to_copy(wstring_view s,
+                     basic_memory_buffer<Char>& buffer) = delete;
+#endif
+
+// wchar_t(2bytes) to wchar_t(2bytes)
+// wchar_t(2bytes) to char16_t
+template <typename Char,
+          FMT_ENABLE_IF(sizeof(wchar_t) == 2 && sizeof(Char) == 2)>
+void convert_to_copy(wstring_view s, basic_memory_buffer<Char>& buffer) {
+  utf16_to_utf32(s, validate_utf32);
+  buffer.resize(s.size() + 1);
+  std::copy(s.begin(), s.end(), buffer.begin());
+  buffer[s.size()] = 0;
+}
+
+// wchar_t(2bytes) to char32_t
+template <typename Char,
+          FMT_ENABLE_IF(sizeof(wchar_t) == 2 && sizeof(Char) == 4)>
+void convert_to_copy(wstring_view s, basic_memory_buffer<Char>& buffer) {
+  buffer.reserve(s.size() + 1);
+  utf16_to_utf32(s, [&buffer](int ch) {
+    validate_utf32(ch);
+    buffer.push_back(static_cast<char32_t>(ch));
+  });
+  buffer.push_back(static_cast<Char>(0));
+}
+
+// wchar_t(4bytes) to char8_t
+// wchar_t(4bytes) to char(utf-8)
+template <typename Char,
+          FMT_ENABLE_IF(sizeof(wchar_t) == 4 &&
+                        (std::is_same<Char, char8_type>::value ||
+                         std::is_same<Char, char>::value && FMT_UNICODE))>
+void convert_to_copy(wstring_view s, basic_memory_buffer<Char>& buffer) {
+  buffer.reserve(s.size() + 1);
+  for (int ch : s) {
+    validate_utf32(ch);
+    push_back_utf8(ch, buffer);
+  }
+  buffer.push_back(static_cast<Char>(0));
+}
+
+// wchar_t(4bytes) to char(!utf-8)
+template <typename Char,
+          FMT_ENABLE_IF(sizeof(wchar_t) == 4 &&
+                        std::is_same<Char, char>::value && !FMT_UNICODE)>
+void convert_to_copy(wstring_view s,
+                     basic_memory_buffer<Char>& buffer) = delete;
+
+// wchar_t(4bytes) to char16_t
+template <typename Char,
+          FMT_ENABLE_IF(sizeof(wchar_t) == 4 && sizeof(Char) == 2)>
+void convert_to_copy(wstring_view s, basic_memory_buffer<Char>& buffer) {
+  buffer.reserve(s.size() + 1);
+  for (int ch : s) {
+    validate_utf32(ch);
+    if (ch < 0x10000)
+      buffer.push_back(static_cast<char16_t>(ch));
+    else {
+      buffer.push_back(static_cast<char16_t>((ch - 0x10000) / 0x400 + 0xD800));
+      buffer.push_back(static_cast<char16_t>((ch - 0x10000) % 0x400 + 0xDC00));
+    }
+  }
+  buffer.push_back(static_cast<Char>(0));
+}
+
+// wchar_t(4bytes) to wchar_t(4bytes)
+// wchar_t(4bytes) to char32_t
+template <typename Char,
+          FMT_ENABLE_IF(sizeof(wchar_t) == 4 && sizeof(Char) == 4)>
+void convert_to_copy(wstring_view s, basic_memory_buffer<Char>& buffer) {
+  buffer.reserve(s.size() + 1);
+  for (int ch : s) {
+    validate_utf32(ch);
+    buffer.push_back(static_cast<Char>(ch));
+  }
+  buffer.push_back(static_cast<Char>(0));
+}
+
+template <typename Char> convert_to<Char>::convert_to(wstring_view s) {
+  convert_to_copy(s, buffer_);
+}
+
 // A public domain branchless UTF-8 decoder by Christopher Wellons:
 // https://github.com/skeeto/branchless-utf8
 /* Decode the next character, c, from buf, reporting errors in e.

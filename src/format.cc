@@ -66,4 +66,11 @@ template FMT_API wchar_t detail::decimal_point_impl(locale_ref);
 
 template FMT_API void detail::buffer<wchar_t>::append(const wchar_t*,
                                                       const wchar_t*);
+
+template class detail::convert_to<char>;
+template class detail::convert_to<detail::char8_type>;
+template class detail::convert_to<wchar_t>;
+template class detail::convert_to<char16_t>;
+template class detail::convert_to<char32_t>;
+
 FMT_END_NAMESPACE

@@ -990,6 +990,19 @@ inline It format_uint(It out, UInt value, int num_digits, bool upper = false) {
   return detail::copy_str<Char>(buffer, buffer + num_digits, out);
 }
 
+// A template converter from wchar_t to any char.
+template <typename Char> class convert_to {
+ private:
+  basic_memory_buffer<Char> buffer_;
+
+ public:
+  FMT_API explicit convert_to(wstring_view s);
+  operator basic_string_view<Char>() const { return {&buffer_[0], size()}; }
+  size_t size() const { return buffer_.size() - 1; }
+  const Char* c_str() const { return &buffer_[0]; }
+  std::basic_string<Char> str() const { return {&buffer_[0], size()}; }
+};
+
 // A converter from UTF-8 to UTF-16.
 class utf8_to_utf16 {
  private:
