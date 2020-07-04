@@ -3599,6 +3599,18 @@ std::basic_string<Char> detail::vformat(
   return to_string(buffer);
 }
 
+namespace detail {
+template <typename Char>
+inline bool fputs(const Char* chars, FILE* stream) FMT_NOEXCEPT {
+  return std::fputs(chars, stream) != EOF;
+}
+
+template <>
+inline bool fputs<wchar_t>(const wchar_t* chars, FILE* stream) FMT_NOEXCEPT {
+  return std::fputws(chars, stream) != EOF;
+}
+}  // namespace detail
+
 template <typename Char, FMT_ENABLE_IF(std::is_same<Char, wchar_t>::value)>
 void vprint(std::FILE* f, basic_string_view<Char> format_str,
             wformat_args args) {
