@@ -3622,11 +3622,6 @@ FMT_INLINE void vprint(
     FMT_THROW(system_error(errno, "cannot write to file"));
 }
 
-template <typename Char, FMT_ENABLE_IF(std::is_same<Char, wchar_t>::value)>
-void vprint(basic_string_view<Char> format_str, wformat_args args) {
-  vprint(stdout, format_str, args);
-}
-
 #if FMT_USE_USER_DEFINED_LITERALS
 namespace detail {
 

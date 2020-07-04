@@ -1580,10 +1580,6 @@ FMT_FUNC void detail::vprint_mojibake(std::FILE* f, string_view format_str,
 }
 #endif
 
-FMT_FUNC void vprint(string_view format_str, format_args args) {
-  vprint(stdout, format_str, args);
-}
-
 FMT_END_NAMESPACE
 
 #ifdef _MSC_VER
