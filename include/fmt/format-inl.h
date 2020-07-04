@@ -1569,26 +1569,6 @@ FMT_FUNC std::string detail::vformat(string_view format_str, format_args args) {
   return to_string(buffer);
 }
 
-FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
-  memory_buffer buffer;
-  detail::vformat_to(buffer, format_str,
-                     basic_format_args<buffer_context<char>>(args));
-#ifdef _WIN32
-  auto fd = _fileno(f);
-  if (_isatty(fd)) {
-    detail::utf8_to_utf16 u16(string_view(buffer.data(), buffer.size()));
-    auto written = DWORD();
-    if (!WriteConsoleW(reinterpret_cast<HANDLE>(_get_osfhandle(fd)),
-                       u16.c_str(), static_cast<DWORD>(u16.size()), &written,
-                       nullptr)) {
-      FMT_THROW(format_error("failed to write to console"));
-    }
-    return;
-  }
-#endif
-  detail::fwrite_fully(buffer.data(), 1, buffer.size(), f);
-}
-
 #ifdef _WIN32
 // Print assuming legacy (non-Unicode) encoding.
 FMT_FUNC void detail::vprint_mojibake(std::FILE* f, string_view format_str,

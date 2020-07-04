@@ -3611,13 +3611,14 @@ inline bool fputs<wchar_t>(const wchar_t* chars, FILE* stream) FMT_NOEXCEPT {
 }
 }  // namespace detail
 
-template <typename Char, FMT_ENABLE_IF(std::is_same<Char, wchar_t>::value)>
-void vprint(std::FILE* f, basic_string_view<Char> format_str,
-            wformat_args args) {
-  wmemory_buffer buffer;
-  detail::vformat_to(buffer, format_str, args);
-  buffer.push_back(L'\0');
-  if (std::fputws(buffer.data(), f) == -1)
+template <typename S, typename Char>
+FMT_INLINE void vprint(
+    std::FILE* f, const S& format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+  basic_memory_buffer<Char> buffer;
+  detail::vformat_to(buffer, basic_string_view<Char>(format_str), args);
+  buffer.push_back(static_cast<Char>(0));
+  if (!detail::fputs(buffer.data(), f))
     FMT_THROW(system_error(errno, "cannot write to file"));
 }
 

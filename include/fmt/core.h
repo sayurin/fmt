@@ -2010,7 +2010,10 @@ FMT_INLINE std::basic_string<Char> format(const S& format_str, Args&&... args) {
 }
 
 FMT_API void vprint(string_view, format_args);
-FMT_API void vprint(std::FILE*, string_view, format_args);
+template <typename S, typename Char = char_t<S>>
+FMT_INLINE void vprint(
+    std::FILE* f, const S& format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args);
 
 /**
   \rst
