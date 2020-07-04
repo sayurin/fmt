@@ -228,13 +228,15 @@ class buffered_file {
   // of MinGW that define fileno as a macro.
   FMT_API int(fileno)() const;
 
-  void vprint(string_view format_str, format_args args) {
+  template <typename S, typename Char = char_t<S>>
+  void vprint(const S& format_str,
+              basic_format_args<buffer_context<type_identity_t<Char>>> args) {
     fmt::vprint(file_, format_str, args);
   }
 
-  template <typename... Args>
-  inline void print(string_view format_str, const Args&... args) {
-    vprint(format_str, make_format_args(args...));
+  template <typename S, typename... Args, typename Char = char_t<S>>
+  void print(const S& format_str, const Args&... args) {
+    vprint(format_str, make_format_args<buffer_context<Char>>(args...));
   }
 };
 
