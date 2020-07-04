@@ -1929,15 +1929,6 @@ template <typename Char>
 buffer_appender<Char> vformat_to(
     buffer<Char>& buf, basic_string_view<Char> format_str,
     basic_format_args<FMT_BUFFER_CONTEXT(type_identity_t<Char>)> args);
-
-template <typename Char, typename Args,
-          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-inline void vprint_mojibake(std::FILE*, basic_string_view<Char>, const Args&) {}
-
-FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
-#ifndef _WIN32
-inline void vprint_mojibake(std::FILE*, string_view, format_args) {}
-#endif
 }  // namespace detail
 
 /** Formats a string and writes the output to ``out``. */
@@ -2035,9 +2026,7 @@ FMT_INLINE void vprint(
 template <typename S, typename... Args, typename Char = char_t<S>>
 inline void print(std::FILE* f, const S& format_str, Args&&... args) {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
-  return detail::is_unicode<Char>()
-             ? vprint(f, to_string_view(format_str), vargs)
-             : detail::vprint_mojibake(f, to_string_view(format_str), vargs);
+  return vprint(f, to_string_view(format_str), vargs);
 }
 
 /**
@@ -2054,10 +2043,7 @@ inline void print(std::FILE* f, const S& format_str, Args&&... args) {
 template <typename S, typename... Args, typename Char = char_t<S>>
 inline void print(const S& format_str, Args&&... args) {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
-  return detail::is_unicode<Char>()
-             ? vprint(to_string_view(format_str), vargs)
-             : detail::vprint_mojibake(stdout, to_string_view(format_str),
-                                       vargs);
+  return vprint(to_string_view(format_str), vargs);
 }
 FMT_END_NAMESPACE
 

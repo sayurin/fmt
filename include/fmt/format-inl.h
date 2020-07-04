@@ -167,16 +167,8 @@ FMT_FUNC void report_error(format_func func, int error_code,
                            string_view message) FMT_NOEXCEPT {
   memory_buffer full_message;
   func(full_message, error_code, message);
-  // Don't use fwrite_fully because the latter may throw.
   (void)std::fwrite(full_message.data(), full_message.size(), 1, stderr);
   std::fputc('\n', stderr);
-}
-
-// A wrapper around fwrite that throws on error.
-FMT_FUNC void fwrite_fully(const void* ptr, size_t size, size_t count,
-                           FILE* stream) {
-  size_t written = std::fwrite(ptr, size, count, stream);
-  if (written < count) FMT_THROW(system_error(errno, "cannot write to file"));
 }
 }  // namespace detail
 
@@ -1568,17 +1560,6 @@ FMT_FUNC std::string detail::vformat(string_view format_str, format_args args) {
   detail::vformat_to(buffer, format_str, args);
   return to_string(buffer);
 }
-
-#ifdef _WIN32
-// Print assuming legacy (non-Unicode) encoding.
-FMT_FUNC void detail::vprint_mojibake(std::FILE* f, string_view format_str,
-                                      format_args args) {
-  memory_buffer buffer;
-  detail::vformat_to(buffer, format_str,
-                     basic_format_args<buffer_context<char>>(args));
-  fwrite_fully(buffer.data(), 1, buffer.size(), f);
-}
-#endif
 
 FMT_END_NAMESPACE
 
