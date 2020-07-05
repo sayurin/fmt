@@ -356,26 +356,6 @@ TEST(MemoryBufferTest, ExceptionInDeallocate) {
   EXPECT_CALL(alloc, deallocate(&mem2[0], 2 * size));
 }
 
-TEST(UtilTest, UTF8ToUTF16) {
-  fmt::detail::utf8_to_utf16 u("лошадка");
-  EXPECT_EQ(L"\x043B\x043E\x0448\x0430\x0434\x043A\x0430", u.str());
-  EXPECT_EQ(7, u.size());
-  // U+10437 { DESERET SMALL LETTER YEE }
-  EXPECT_EQ(L"\xD801\xDC37", fmt::detail::utf8_to_utf16("𐐷").str());
-  EXPECT_THROW_MSG(fmt::detail::utf8_to_utf16("\xc3\x28"), std::runtime_error,
-                   "invalid utf8");
-  EXPECT_THROW_MSG(fmt::detail::utf8_to_utf16(fmt::string_view("л", 1)),
-                   std::runtime_error, "invalid utf8");
-  EXPECT_EQ(L"123456", fmt::detail::utf8_to_utf16("123456").str());
-}
-
-TEST(UtilTest, UTF8ToUTF16EmptyString) {
-  std::string s = "";
-  fmt::detail::utf8_to_utf16 u(s.c_str());
-  EXPECT_EQ(L"", u.str());
-  EXPECT_EQ(s.size(), u.size());
-}
-
 TEST(UtilTest, FormatSystemError) {
   fmt::memory_buffer message;
   fmt::format_system_error(message, EDOM, "test");

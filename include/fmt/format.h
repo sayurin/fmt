@@ -1003,19 +1003,6 @@ template <typename Char> class convert_to {
   std::basic_string<Char> str() const { return {&buffer_[0], size()}; }
 };
 
-// A converter from UTF-8 to UTF-16.
-class utf8_to_utf16 {
- private:
-  wmemory_buffer buffer_;
-
- public:
-  FMT_API explicit utf8_to_utf16(string_view s);
-  operator wstring_view() const { return {&buffer_[0], size()}; }
-  size_t size() const { return buffer_.size() - 1; }
-  const wchar_t* c_str() const { return &buffer_[0]; }
-  std::wstring str() const { return {&buffer_[0], size()}; }
-};
-
 template <typename T = void> struct null {};
 
 // Workaround an array initialization issue in gcc 4.8.
