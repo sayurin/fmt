@@ -1,0 +1,10 @@
+root = true
+
+[include/fmt/*.h]
+charset = utf-8-bom
+
+[src/*.cc]
+charset = utf-8-bom
+
+[test/*]
+charset = utf-8-bom
