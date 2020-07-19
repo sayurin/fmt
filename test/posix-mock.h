@@ -1,4 +1,4 @@
-// Formatting library for C++ - mocks of POSIX functions
+﻿// Formatting library for C++ - mocks of POSIX functions
 //
 // Copyright (c) 2012 - present, Victor Zverovich
 // All rights reserved.

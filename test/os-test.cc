@@ -1,4 +1,4 @@
-// Formatting library for C++ - tests of the OS-specific functionality
+﻿// Formatting library for C++ - tests of the OS-specific functionality
 //
 // Copyright (c) 2012 - present, Victor Zverovich
 // All rights reserved.

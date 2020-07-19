@@ -1,4 +1,4 @@
-// Formatting library for C++ - scanning API proof of concept
+﻿// Formatting library for C++ - scanning API proof of concept
 //
 // Copyright (c) 2019 - present, Victor Zverovich
 // All rights reserved.

@@ -1,4 +1,4 @@
-// Formatting library for C++ - test version of FMT_ASSERT
+﻿// Formatting library for C++ - test version of FMT_ASSERT
 //
 // Copyright (c) 2012 - present, Victor Zverovich
 // All rights reserved.

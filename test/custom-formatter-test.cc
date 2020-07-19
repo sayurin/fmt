@@ -1,4 +1,4 @@
-// Formatting library for C++ - custom argument formatter tests
+﻿// Formatting library for C++ - custom argument formatter tests
 //
 // Copyright (c) 2012 - present, Victor Zverovich
 // All rights reserved.

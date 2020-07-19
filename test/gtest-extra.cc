@@ -1,4 +1,4 @@
-// Formatting library for C++ - custom Google Test assertions
+﻿// Formatting library for C++ - custom Google Test assertions
 //
 // Copyright (c) 2012 - present, Victor Zverovich
 // All rights reserved.

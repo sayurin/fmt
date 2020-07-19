@@ -1,4 +1,4 @@
-// Formatting library for C++ - assertion tests
+﻿// Formatting library for C++ - assertion tests
 //
 // Copyright (c) 2012 - present, Victor Zverovich
 // All rights reserved.

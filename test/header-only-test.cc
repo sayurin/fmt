@@ -1,3 +1,3 @@
-// Header-only configuration test
+﻿// Header-only configuration test
 
 #include "fmt/core.h"

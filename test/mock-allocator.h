@@ -1,4 +1,4 @@
-// Formatting library for C++ - mock allocator
+﻿// Formatting library for C++ - mock allocator
 //
 // Copyright (c) 2012 - present, Victor Zverovich
 // All rights reserved.

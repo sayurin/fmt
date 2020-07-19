@@ -1,4 +1,4 @@
-// Formatting library for C++ - formatting library tests
+﻿// Formatting library for C++ - formatting library tests
 //
 // Copyright (c) 2012 - present, Victor Zverovich
 // All rights reserved.

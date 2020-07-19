@@ -1,4 +1,4 @@
-// Formatting library for C++ - std::ostream support tests
+﻿// Formatting library for C++ - std::ostream support tests
 //
 // Copyright (c) 2012 - present, Victor Zverovich
 // All rights reserved.

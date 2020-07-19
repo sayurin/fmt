@@ -1,4 +1,4 @@
-#------------------------------------------------------------------------------
+﻿#------------------------------------------------------------------------------
 # Build the google test library
 
 # We compile Google Test ourselves instead of using pre-compiled libraries.

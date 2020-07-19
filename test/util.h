@@ -1,4 +1,4 @@
-// Formatting library for C++ - test utilities
+﻿// Formatting library for C++ - test utilities
 //
 // Copyright (c) 2012 - present, Victor Zverovich
 // All rights reserved.
