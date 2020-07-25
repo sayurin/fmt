@@ -797,7 +797,9 @@ TEST(FormatterTest, Width) {
   EXPECT_EQ("    0xcafe", format("{0:10}", reinterpret_cast<void*>(0xcafe)));
   EXPECT_EQ("x          ", format("{0:11}", 'x'));
   EXPECT_EQ("str         ", format("{0:12}", "str"));
+#if FMT_UNICODE
   EXPECT_EQ(fmt::format("{:*^5}", "🤡"), "**🤡**");
+#endif
 }
 
 template <typename T> inline T const_check(T value) { return value; }
