@@ -1625,9 +1625,11 @@ TEST(FormatTest, Dynamic) {
 }
 
 TEST(FormatTest, Bytes) {
+#if FMT_UNICODE
   auto s = fmt::format("{:10}", fmt::bytes("ёжик"));
   EXPECT_EQ("ёжик  ", s);
   EXPECT_EQ(10, s.size());
+#endif
 }
 
 TEST(FormatTest, JoinArg) {
